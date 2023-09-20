@@ -23,10 +23,8 @@ function Login() {
             withCredentials: true
           });
     
-          console.log('Response:', response.data);
           if (response.status == 200) {
-            console.log(response.headers);
-            // navigate('/');
+            navigate('/');
           }
         } catch (err) {
           console.error('Error:', err);

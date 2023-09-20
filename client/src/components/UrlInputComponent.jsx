@@ -13,7 +13,7 @@ const UrlInput = () => {
     e.preventDefault();
 
     try {
-      console.log(originalUrl);
+      console.log(`OG url: ${originalUrl}`);
       const response = await axios.post(`${endpoint}/shorten`, {
         url: originalUrl,
       });
@@ -21,7 +21,6 @@ const UrlInput = () => {
       setShortUrl(`${endpoint}/${response.data.shortUrl}`);
       setError(null); 
     } catch (err) {
-
       setError('Error occurred while shortening URL.');
       setShortUrl('');
       console.error(err);

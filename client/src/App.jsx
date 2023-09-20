@@ -7,18 +7,27 @@ import { Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Cookies from 'js-cookie';
 import jwt_decode from 'jwt-decode';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const token = Cookies.get('jwt');
-    let userid = -1;
-    if (token) {
-      setIsLoggedIn(true);
-      const decoded = jwt_decode(token);
-      userid = decoded.userid;
-      console.log(userid);
-    }
+    const [userId, setUserId] = useState(-1);
+
+    useEffect(() => {
+      const token = Cookies.get('jwt');
+
+      if (token) {
+        setIsLoggedIn(true);
+        const decoded = jwt_decode(token);
+        setUserId(decoded.userid);
+        console.log(decoded.userid);
+      }
+      else {
+        setIsLoggedIn(false);
+        setUserId(-1);
+      }
+    }, []);
+    
 
   return (
     <>
@@ -27,7 +36,7 @@ function App() {
           <Route path="/" element={<UrlInput/>} />
           <Route path="/signup" element={<Signup/>} />
           <Route path="/login" element={<Login/>} />
-          <Route path="/urls" element={<UrlPanel userid={userid}/>} />
+          <Route path="/urls" element={<UrlPanel userid={userId}/>} />
         </Routes>
     </>
   )
