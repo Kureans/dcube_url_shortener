@@ -7,7 +7,7 @@ const UrlInput = () => {
   const [shortUrl, setShortUrl] = useState('');
   const [error, setError] = useState(null);
 
-  const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV;
+  const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV || "http://localhost:3000";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -10,7 +10,7 @@ function Login() {
   const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
-  const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV;
+  const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV || "http://localhost:3000";
   
   const handleSubmit = async (e) => {
     console.log(endpoint);
