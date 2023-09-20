@@ -19,11 +19,14 @@ function Login() {
           const response = await axios.post(`${endpoint}/login`, {
             username,
             password,
+          }, {
+            withCredentials: true
           });
     
           console.log('Response:', response.data);
           if (response.status == 200) {
-            navigate('/');
+            console.log(response.headers);
+            // navigate('/');
           }
         } catch (err) {
           console.error('Error:', err);

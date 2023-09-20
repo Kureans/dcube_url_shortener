@@ -1,11 +1,10 @@
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import Cookies from 'js-cookie';
+
 
 function UrlHeader(props) {
-  const test = Cookies.get();
-  console.log(test);
+
   const urlListNavLink = (props.isLoggedIn) ? <Nav.Link href="/urls">Your URLs</Nav.Link> : <></>;
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
