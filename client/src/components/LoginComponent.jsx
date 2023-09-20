@@ -2,11 +2,14 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/esm/Container';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  const navigate = useNavigate();
   const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV;
   
   const handleSubmit = async (e) => {
@@ -19,6 +22,9 @@ function Login() {
           });
     
           console.log('Response:', response.data);
+          if (response.status == 200) {
+            navigate('/');
+          }
         } catch (err) {
           console.error('Error:', err);
         }
