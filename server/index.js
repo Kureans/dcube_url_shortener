@@ -2,9 +2,11 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const generateId = require('generate-unique-id');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+require('dotenv').config()
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const urlMap = {};
 
 app.use(express.json());
@@ -47,8 +49,10 @@ app.post('/signup', async (req, res) => {
 
   const salt = await bcrypt.genSalt();
   const hashedPassword = await bcrypt.hash(password, salt);
-  createUser(username, hashedPassword);
-  res.json({ username, hashedPassword });
+  const userid = createUser(username, hashedPassword);
+  const token = createToken(userid);
+  res.cookie('jwt', token, { httpOnly: true, maxAge: process.env.MAX_AGE * 1000 });
+  res.status(201).json({ username, hashedPassword });
 });
 
 app.post('/login', async (req, res) => {
@@ -60,7 +64,7 @@ app.post('/login', async (req, res) => {
     if (!row) {
       res.json({ "message": "User does not exist" });
     }
-
+    console.log(row);
     const hashedPassword = row.password;
     const auth = await bcrypt.compare(password, hashedPassword);
 
@@ -68,7 +72,10 @@ app.post('/login', async (req, res) => {
       res.json({ "message": "Incorrect Password "});
     }
     else {
-      res.json({"message": "user login"});
+      const userid = row.id;
+      const token = createToken(userid);
+      res.cookie('jwt', token, { httpOnly: true, maxAge: process.env.MAX_AGE * 1000 });
+      res.status(200).json({"message": "Successfully logged in" });
     }
   });
 });
@@ -92,9 +99,18 @@ function initTables() {
 function createUser(username, hashedPassword) {
   db.run(`INSERT INTO users (username, password)
     VALUES ('${username}', '${hashedPassword}')
-  `, (err) => {
+  `, function (err) {
     if (err) {
       console.log(err);
     }
+    console.log(`LAST ID: ${this.lastID}`);
+  });
+  
+  return -1;
+}
+
+function createToken(userid) {
+  return jwt.sign({ userid }, process.env.SECRET_STRING, {
+    expiresIn: process.env.MAX_AGE
   });
 }
