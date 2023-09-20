@@ -3,13 +3,17 @@ const sqlite3 = require('sqlite3').verbose();
 const generateId = require('generate-unique-id');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('dotenv').config()
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 const urlMap = {};
 
+app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 const db = new sqlite3.Database('urlshortener-db', (err) => {
   if (err) {
@@ -24,9 +28,17 @@ initTables();
 
 app.get('/:shortUrl', (req, res) => {
   const shortUrl = req.params.shortUrl;
-  console.log(shortUrl);
-  const originalUrl = urlMap[shortUrl];
-  console.log(originalUrl);
+  
+  // can skip db query if inside in-memory map
+  let originalUrl = urlMap[shortUrl];
+  if (originalUrl) {
+    res.redirect(originalUrl);
+  }
+
+  db.get(`SELECT original_url FROM urls WHERE short_url = ${shortUrl}`, async (err, row) => {
+    originalUrl = row;
+  })
+
   if (originalUrl) {
     res.redirect(originalUrl);
   }
@@ -37,21 +49,47 @@ app.get('/:shortUrl', (req, res) => {
 
 app.post('/shorten', (req, res) => {
   const originalUrl = req.body.url;
+  const userId = req.body.userId;
   const shortUrl = generateId({length: 8});
+  console.log("shorten endpoint");
+  console.log(`og url: ${originalUrl}, short url: ${shortUrl}, id ${userId}`);
+  // in memory map for non-account users
   urlMap[shortUrl] = originalUrl;
-  console.log(urlMap);
-  res.json({ shortUrl, originalUrl });
-})
+  console.log(shortUrl);
+  if (userId) {
+      console.log(`storing in user id ${userId}'s database`);
+      db.run(`INSERT INTO urls (original_url, short_url, user_id) VALUES ('${originalUrl}', '${shortUrl}', ${userId})`, function (err) {
+      if (err) {
+        console.log(err);
+      }
+      res.json({ shortUrl });
+    });
+  }
+  else {
+    res.json({ shortUrl });
+  }
+});
+
+app.get('/urls/:id', (req, res) => {
+  const userId = req.params.id;
+  db.all(`SELECT short_url, original_url FROM urls
+        WHERE user_id = ${userId}`, (err, rows) => {
+          res.json(rows);
+    });
+});
 
 app.post('/signup', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-
+  const confirmPassword = req.body.confirmPassword;
+  if (password != confirmPassword) {
+    res.json({"message": "passwords do not match"});
+  }
   const salt = await bcrypt.genSalt();
   const hashedPassword = await bcrypt.hash(password, salt);
   const userid = createUser(username, hashedPassword);
   const token = createToken(userid);
-  res.cookie('jwt', token, { httpOnly: true, maxAge: process.env.MAX_AGE * 1000 });
+  res.cookie('jwt', token, { httpOnly: false, maxAge: process.env.MAX_AGE * 1000 });
   res.status(201).json({ username, hashedPassword });
 });
 
@@ -74,7 +112,7 @@ app.post('/login', async (req, res) => {
     else {
       const userid = row.id;
       const token = createToken(userid);
-      res.cookie('jwt', token, { httpOnly: true, maxAge: process.env.MAX_AGE * 1000 });
+      res.cookie('jwt', token, { httpOnly: false, maxAge: process.env.MAX_AGE * 1000 });
       res.status(200).json({"message": "Successfully logged in" });
     }
   });
