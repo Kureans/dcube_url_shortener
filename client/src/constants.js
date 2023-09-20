@@ -1,1 +1,0 @@
-export const REACT_APP_SERVER_ENDPOINT = "http://localhost:3000";

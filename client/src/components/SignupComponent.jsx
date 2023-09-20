@@ -8,7 +8,7 @@ function Signup() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const endpoint = import.meta.env.SERVER_ENDPOINT_DEV;
+    const endpoint = import.meta.env.VITE_SERVER_ENDPOINT_DEV;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
