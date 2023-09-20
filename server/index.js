@@ -1,15 +1,24 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const generateId = require('generate-unique-id');
+const bcrypt = require('bcrypt');
 
 const app = express();
-const db = new sqlite3.Database('urlshortener-db');
 const port = 3000;
 const urlMap = {};
 
-initDB();
-
 app.use(express.json());
+
+const db = new sqlite3.Database('urlshortener-db', (err) => {
+  if (err) {
+    console.log(err);
+  }
+  app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`);
+  });
+});
+
+initTables();
 
 app.get('/:shortUrl', (req, res) => {
   const shortUrl = req.params.shortUrl;
@@ -32,11 +41,39 @@ app.post('/shorten', (req, res) => {
   res.json({ shortUrl, originalUrl });
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+app.post('/signup', async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  const salt = await bcrypt.genSalt();
+  const hashedPassword = await bcrypt.hash(password, salt);
+  createUser(username, hashedPassword);
+  res.json({ username, hashedPassword });
 });
 
-function initDB() {
+app.post('/login', async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  console.log(`username: ${username}`);
+
+  db.get(`SELECT * FROM users WHERE username = '${username}'`, async (err, row) => {
+    if (!row) {
+      res.json({ "message": "User does not exist" });
+    }
+
+    const hashedPassword = row.password;
+    const auth = await bcrypt.compare(password, hashedPassword);
+
+    if (!auth) {
+      res.json({ "message": "Incorrect Password "});
+    }
+    else {
+      res.json({"message": "user login"});
+    }
+  });
+});
+
+function initTables() {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY, 
     username TEXT UNIQUE NOT NULL, 
@@ -50,4 +87,14 @@ function initDB() {
     user_id INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
+}
+
+function createUser(username, hashedPassword) {
+  db.run(`INSERT INTO users (username, password)
+    VALUES ('${username}', '${hashedPassword}')
+  `, (err) => {
+    if (err) {
+      console.log(err);
+    }
+  });
 }
